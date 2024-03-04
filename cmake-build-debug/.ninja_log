@@ -1,0 +1,6 @@
+# ninja log v5
+0	161	1709465511995175087	CMakeFiles/fast_matrix_multiplication.dir/FMM/fmm.c.o	54c0bd3444bbe0d9
+163	289	1709465512115176677	CMakeFiles/fast_matrix_multiplication.dir/FMM/main.c.o	eb4fcea9d7709bf9
+289	407	1709465512239178321	CMakeFiles/fast_matrix_multiplication.dir/FMM/utilities.c.o	9a8f04b293fd911
+1	173	1709465953425054359	CMakeFiles/fast_matrix_multiplication.dir/FMM/fmm.c.o	54c0bd3444bbe0d9
+173	248	1709465953493055269	fast_matrix_multiplication	aa33362f1fb5b009
