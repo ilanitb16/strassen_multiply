@@ -20,8 +20,8 @@ int main() {
 
 
     // double time = measure_time(f1, f2, f3, n);
-    double time = measure_time("../FMM/mat1.txt", "../FMM/mat2.txt", "../FMM/result.txt", 3);
-    //double time = measure_time("../FMM/mat1000-1.txt", "../FMM/mat1000-2.txt", "../FMM/result.txt", 1000);
+   // double time = measure_time("../FMM/mat1.txt", "../FMM/mat2.txt", "../FMM/result.txt", 3);
+    double time = measure_time("../FMM/mat1000-1.txt", "../FMM/mat1000-2.txt", "../FMM/result.txt", 1000);
 
     printf("Total time: %f ms\n", time);
 }

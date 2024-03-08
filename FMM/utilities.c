@@ -65,22 +65,22 @@ double measure_time(char* file1, char* file2, char* file_result, int n) {
     int* m2 = read_matrix(file2, n);
     int* result = create_matrix(file_result, n);
 
-    printf( "matrix 1: \n");
-    printf( "\n");
-    print_matrix( m1,n);
-
-    printf("matrix2: \n");
-    printf("\n");
-    print_matrix( m2,n);
+//    printf( "matrix 1: \n");
+//    printf( "\n");
+//    print_matrix( m1,n);
+//
+//    printf("matrix2: \n");
+//    printf("\n");
+//    print_matrix( m2,n);
 
 	getrusage(RUSAGE_SELF, &ru); // start timer
 	startTime = ru.ru_utime;
 
     fmm(n, m1, m2, result);
 
-    printf("result: \n");
-    printf(" \n");
-    print_matrix(result,n);
+//    printf("result: \n");
+//    printf(" \n");
+//    print_matrix(result,n);
 
     getrusage(RUSAGE_SELF, &ru); // end timer
     endTime = ru.ru_utime;
