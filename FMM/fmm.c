@@ -2,94 +2,189 @@
 
 #define BLOCK_SIZE 16
 
+#include <stdlib.h>
+#include <stdio.h>
 
-void pack_matrix(int n, int *source_matrix, int leading_dimension_source, int *packed_matrix) {
-    for (int i = 0; i < n; i++) { // Iterate over rows
-        for (int j = 0; j < n; j++) { // Iterate over columns
-            // Calculate pointers to the start of the current row and column in the source matrix
-            int *source_element_ptr = &source_matrix[i * leading_dimension_source + j];
-            // Calculate pointer to the position in the packed matrix where the current element should be copied
-            int *packed_element_ptr = packed_matrix + i * n + j;
-            // Copy the current element from source to packed matrix
-            *packed_element_ptr = *source_element_ptr;
-        }
+
+void add_matrices(int *result, int *a, int *b, int size) {
+    for (int i = 0; i < size * size; i++) {
+        result[i] = a[i] + b[i];
     }
 }
 
-void matrix_multiply(int n, int *A, int *B, int *C) {
-    // Create packed matrices for A and B
-    int *packed_A = (int*)malloc(n * n * sizeof(int));
-    int *packed_B = (int*)malloc(n * n * sizeof(int));
-    pack_matrix(n, A, n, packed_A);
-    pack_matrix(n, B, n, packed_B);
+void subtract_matrices(int *result, int *a, int *b, int size) {
+    for (int i = 0; i < size * size; i++) {
+        result[i] = a[i] - b[i];
+    }
+}
 
-    // Perform matrix multiplication
-    for (int i = 0; i < n; i+= BLOCK_SIZE){
-        for (int j = 0; j < n; j += BLOCK_SIZE) {
-            for (int k = 0; k < n; k += BLOCK_SIZE) {
-                for (int row = i; row < i + BLOCK_SIZE; row++) {
-                    for (int col = j; col < j + BLOCK_SIZE; col++) {
-                        int sum = 0;
-                        for (int inner = k; inner < k + BLOCK_SIZE; inner++) {
-                            sum += packed_A[row * n + inner] * packed_B[inner * n + col];
-                        }
-                        C[row * n + col] += sum;
-                    }
-                }
-            }
+void strassen_multiply(int *result, int *mat1, int *mat2, int n) {
+    if (n == 1) {
+        result[0] = mat1[0] * mat2[0];
+        return;
+    }
+
+    int m = n / 2; // Size of submatrices
+
+    // Allocate memory for submatrices
+    int *a11 = (int*)malloc(m * m * sizeof(int));
+    int *a12 = (int*)malloc(m * m * sizeof(int));
+    int *a21 = (int*)malloc(m * m * sizeof(int));
+    int *a22 = (int*)malloc(m * m * sizeof(int));
+    int *b11 = (int*)malloc(m * m * sizeof(int));
+    int *b12 = (int*)malloc(m * m * sizeof(int));
+    int *b21 = (int*)malloc(m * m * sizeof(int));
+    int *b22 = (int*)malloc(m * m * sizeof(int));
+    int *c11 = (int*)malloc(m * m * sizeof(int));
+    int *c12 = (int*)malloc(m * m * sizeof(int));
+    int *c21 = (int*)malloc(m * m * sizeof(int));
+    int *c22 = (int*)malloc(m * m * sizeof(int));
+    int *p = (int*)malloc(m * m * sizeof(int));
+    int *q = (int*)malloc(m * m * sizeof(int));
+    int *r = (int*)malloc(m * m * sizeof(int));
+    int *s = (int*)malloc(m * m * sizeof(int));
+    int *t = (int*)malloc(m * m * sizeof(int));
+    int *u = (int*)malloc(m * m * sizeof(int));
+    int *v = (int*)malloc(m * m * sizeof(int));
+    int *t1 = (int*)malloc(m * m * sizeof(int));
+    int *t2 = (int*)malloc(m * m * sizeof(int));
+
+    // Populate submatrices
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < m; j++) {
+            a11[i * m + j] = mat1[i * n + j];
+            a12[i * m + j] = mat1[i * n + j + m];
+            a21[i * m + j] = mat1[(i + m) * n + j];
+            a22[i * m + j] = mat1[(i + m) * n + j + m];
+            b11[i * m + j] = mat2[i * n + j];
+            b12[i * m + j] = mat2[i * n + j + m];
+            b21[i * m + j] = mat2[(i + m) * n + j];
+            b22[i * m + j] = mat2[(i + m) * n + j + m];
+        }
+    }
+
+    // Recursive calls for submatrices
+    int *temp1 = (int*)malloc(m * m * sizeof(int));
+    int *temp2 = (int*)malloc(m * m * sizeof(int));
+
+    // Calculate p, q, r, s, t, u, v
+    add_matrices(temp1, a11, a22, m);
+    add_matrices(temp2, b11, b22, m);
+    strassen_multiply(p, temp1, temp2, m);
+
+    add_matrices(temp1, a21, a22, m);
+    strassen_multiply(q, temp1, b11, m);
+
+    subtract_matrices(temp1, b12, b22, m);
+    strassen_multiply(r, a11, temp1, m);
+
+    subtract_matrices(temp1, b21, b11, m);
+    strassen_multiply(s, a22, temp1, m);
+
+    add_matrices(temp1, a11, a12, m);
+    strassen_multiply(t, temp1, b22, m);
+
+    subtract_matrices(temp1, a21, a11, m);
+    add_matrices(temp2, b11, b12, m);
+    strassen_multiply(u, temp1, temp2, m);
+
+    subtract_matrices(temp1, a12, a22, m);
+    add_matrices(temp2, b21, b22, m);
+    strassen_multiply(v, temp1, temp2, m);
+
+    // Combine results into result matrix
+    add_matrices(temp1, p, s, m);
+    add_matrices(temp2, v, temp1, m);
+    subtract_matrices(c11, temp2, t, m);
+    add_matrices(c12, r, t, m);
+    add_matrices(c21, q, s, m);
+    add_matrices(temp1, p, r, m);
+    add_matrices(temp2, u, temp1, m);
+    subtract_matrices(c22, temp2, q, m);
+
+    // Copy submatrices to the result matrix
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < m; j++) {
+            result[i * n + j] = c11[i * m + j];
+            result[i * n + j + m] = c12[i * m + j];
+            result[(i + m) * n + j] = c21[i * m + j];
+            result[(i + m) * n + j + m] = c22[i * m + j];
         }
     }
 
     // Free dynamically allocated memory
-    free(packed_A);
-    free(packed_B);
+    free(a11);
+    free(a12);
+    free(a21);
+    free(a22);
+    free(b11);
+    free(b12);
+    free(b21);
+    free(b22);
+    free(c11);
+    free(c12);
+    free(c21);
+    free(c22);
+    free(p);
+    free(q);
+    free(r);
+    free(s);
+    free(t);
+    free(u);
+    free(v);
+    free(t1);
+    free(t2);
+    free(temp1);
+    free(temp2);
 }
 
 void fmm(int n, int* m1, int* m2, int* result) {
-//    for (int i = 0; i < n; i++) {
-//        for (int j = 0; j < n; j++) {
-//            result[i * n + j] = 0;  // result[i][j] = 0
-//            for (int k = 0; k < n; k++)
-//                result[i * n + j] += m1[i * n + k] * m2[k * n + j];  // result[i][j] += m1[i][k] * m2[k][j]
-//        }
-//    }
-    matrix_multiply(n,m1,m2, result);
-}
+// Check if n is odd
+    if (n % 2 != 0) {
+        // Pad matrices with zeros to make dimensions even
+        int padded_size = n + 1; // New size with padding
+        int* padded_m1 = (int*)malloc(padded_size * padded_size * sizeof(int));
+        int* padded_m2 = (int*)malloc(padded_size * padded_size * sizeof(int));
+        int* padded_result = (int*)malloc(padded_size * padded_size * sizeof(int));
 
-//void pack_matrix_columns(int num_columns, double *source_matrix, int leading_dimension_source, double *packed_matrix) {
-//    // Iterate over each column of the source matrix
-//    for (int column_index = 0; column_index < num_columns; column_index++) {
-//        // Calculate the pointer to the start of the current column in the source matrix
-//        double *source_column_ptr = &source_matrix[column_index * leading_dimension_source];
-//
-//        // Copy each element of the current column into the packed matrix
-//        // Note: Assuming each column consists of exactly 4 elements
-//        *packed_matrix = *source_column_ptr;                // Copy the first element
-//        *(packed_matrix + 1) = *(source_column_ptr + 1);    // Copy the second element
-//        *(packed_matrix + 2) = *(source_column_ptr + 2);    // Copy the third element
-//        *(packed_matrix + 3) = *(source_column_ptr + 3);    // Copy the four
-//    }
-//    }
-//void pack_matrix_rows(int num_rows, double *source_matrix, int leading_dimension_source, double *packed_matrix) {
-//    // Define pointers to the starting elements of each row in source_matrix
-//    double *source_row_pointers[] = {
-//            &source_matrix[0 * leading_dimension_source],  // Pointer to the start of row 0
-//            &source_matrix[1 * leading_dimension_source],  // Pointer to the start of row 1
-//            &source_matrix[2 * leading_dimension_source],  // Pointer to the start of row 2
-//            &source_matrix[3 * leading_dimension_source]   // Pointer to the start of row 3
-//    };
-//
-//    // Loop over rows of source_matrix and pack them into packed_matrix
-//    for (int row_index = 0; row_index < num_rows; row_index++) {
-//        // Pointer to the start of the current row in packed_matrix
-//        double *packed_row_ptr = packed_matrix + row_index * 4;
-//
-//        // Copy elements from source_matrix row by row into packed_matrix
-//        for (int column_index = 0; column_index < 4; column_index++) {
-//            packed_row_ptr[column_index] = source_row_pointers[column_index][row_index];
-//        }
-//    }
-//}
+        // Copy original matrices to padded matrices
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                padded_m1[i * padded_size + j] = m1[i * n + j];
+                padded_m2[i * padded_size + j] = m2[i * n + j];
+            }
+        }
+
+        // Fill padded regions with zeros
+        for (int i = 0; i < padded_size; i++) {
+            for (int j = n; j < padded_size; j++) {
+                padded_m1[i * padded_size + j] = 0;
+                padded_m2[i * padded_size + j] = 0;
+            }
+        }
+
+        // Perform matrix multiplication on padded matrices
+        strassen_multiply(padded_result, padded_m1, padded_m2, padded_size);
+
+        // Copy result to original size
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                result[i * n + j] = padded_result[i * padded_size + j];
+            }
+        }
+
+        // Free memory for padded matrices and result
+        free(padded_m1);
+        free(padded_m2);
+        free(padded_result);
+    } else {
+        // If n is even, perform matrix multiplication directly
+        strassen_multiply(result, m1, m2, n);
+    }}
+
+
+
+
 
 
 
